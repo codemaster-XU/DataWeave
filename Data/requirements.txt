@@ -1,0 +1,6 @@
+faker==24.3.0
+sqlalchemy==2.0.25
+pymysql==1.1.0
+flask==2.3.3
+python-dotenv==1.0.0
+flask-cors==4.0.0
