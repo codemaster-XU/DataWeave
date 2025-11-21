@@ -1,0 +1,13 @@
+{
+    "servers": {
+      "daisyui-blueprint": {
+        "type": "stdio",
+        "command": "npx",
+        "args": ["-y", "daisyui-blueprint@latest"],
+        "env": {
+          "LICENSE": "MIT",
+          "EMAIL": "3325485662@qq.com"
+        }
+      }
+    }
+  }

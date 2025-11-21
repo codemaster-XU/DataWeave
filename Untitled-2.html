@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>电商数据库分析中台</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #050816;
+      --bg2: #0d1024;
+      --card: rgba(255,255,255,0.05);
+      --card-strong: rgba(255,255,255,0.08);
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --accent: #22d3ee;
+      --accent2: #f59e0b;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --border: rgba(255,255,255,0.12);
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;padding:18px;
+      font-family:'Manrope','Segoe UI','Microsoft Yahei',sans-serif;
+      background:
+        radial-gradient(circle at 12% 20%, rgba(99,102,241,0.16), transparent 30%),
+        radial-gradient(circle at 82% 8%, rgba(34,211,238,0.18), transparent 28%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      color:var(--text);
+      min-height:100vh;
+    }
+    .glow{
+      position:fixed;inset:0;pointer-events:none;z-index:0;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.05) 1px, transparent 0),
+        radial-gradient(rgba(255,255,255,0.04) 1px, transparent 0);
+      background-size:24px 24px, 38px 38px;
+      mix-blend-mode:screen;opacity:0.7;
+    }
+    .container{max-width:1280px;margin:0 auto;position:relative;z-index:1;}
+    .header{
+      background:linear-gradient(135deg,rgba(34,211,238,0.2),rgba(245,158,11,0.16));
+      border:1px solid var(--border);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 20px 60px rgba(0,0,0,0.35);
+      position:relative;overflow:hidden;
+    }
+    .header::after{
+      content:'';
+      position:absolute;right:-60px;bottom:-120px;width:260px;height:260px;
+      background:radial-gradient(circle, rgba(34,211,238,0.35), transparent 60%);
+      filter:blur(25px);
+    }
+    .title{margin:0;font-size:28px;letter-spacing:0.4px;}
+    .muted{color:var(--muted);}
+    .theme-switcher{display:flex;align-items:center;gap:8px;margin-top:8px;}
+    .theme-btn{width:26px;height:26px;border-radius:8px;border:2px solid rgba(255,255,255,0.5);cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,0.35);}
+    .theme-btn.active{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,0.4);}
+    .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+    .tab{padding:12px;text-align:center;border-radius:12px;background:rgba(255,255,255,0.06);cursor:pointer;color:var(--text);border:1px solid var(--border);font-weight:700;}
+    .tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1120;border:none;box-shadow:0 14px 30px rgba(34,211,238,0.3);}
+    .tab-content{display:none;}
+    .tab-content.active{display:block;}
+    .row{display:flex;flex-wrap:wrap;gap:12px;}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:14px;
+      flex:1;min-width:230px;
+      box-shadow:0 12px 36px rgba(0,0,0,0.25);
+      backdrop-filter:blur(6px);
+      position:relative;overflow:hidden;
+    }
+    .card::before{
+      content:'';position:absolute;inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,0.06),transparent 55%);
+      opacity:0.65;pointer-events:none;
+    }
+    .metric{font-size:28px;font-weight:800;margin:6px 0;}
+    .charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;}
+    .chart-box{background:var(--card-strong);border:1px solid var(--border);border-radius:14px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,0.22);}
+    .chart{width:100%;height:360px;}
+    .detail-row{display:none;gap:12px;align-items:flex-start;margin-top:12px;}
+    .detail-left{flex:1.2;min-width:520px;}
+    .detail-right{flex:0.8;min-width:360px;display:flex;flex-direction:column;gap:12px;}
+    .btn{padding:10px 14px;border:none;border-radius:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b1120;font-weight:800;cursor:pointer;box-shadow:0 10px 26px rgba(34,211,238,0.35);}
+    .btn.secondary{background:rgba(255,255,255,0.08);color:var(--text);border:1px solid var(--border);box-shadow:none;}
+    select,textarea{width:100%;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.04);color:var(--text);padding:10px;}
+    .table-container{overflow-x:auto;border:1px solid var(--border);border-radius:12px;margin-top:10px;background:rgba(255,255,255,0.04);}
+    table{width:100%;border-collapse:collapse;color:var(--text);}
+    th,td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,0.08);text-align:left;}
+    th{background:rgba(255,255,255,0.06);}
+    .status-pill{display:inline-block;padding:6px 10px;border-radius:12px;background:rgba(255,255,255,0.08);}
+    .status-pill.danger{background:rgba(239,68,68,0.15);color:#fecaca;}
+  </style>
+</head>
+<body>
+  <div class="glow" aria-hidden="true"></div>
+  <div class="container">
+    <div class="header">
+      <div class="title">电商数据库分析中台</div>
+      <div class="muted">SQL Only 查询・CSV 导入・交互式看板</div>
+      <div class="theme-switcher">
+        <span class="muted">主题:</span>
+        <div class="theme-btn" data-theme="default" style="background:linear-gradient(135deg,#22d3ee,#6366f1);" onclick="applyTheme('default',this)"></div>
+        <div class="theme-btn" data-theme="pink" style="background:linear-gradient(135deg,#ffe9f4,#ff9fcd);" onclick="applyTheme('pink',this)"></div>
+        <div class="theme-btn" data-theme="dark" style="background:linear-gradient(135deg,#111,#333);" onclick="applyTheme('dark',this)"></div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <div class="tab active" data-tab="dash">数据看板</div>
+      <div class="tab" data-tab="data">数据管理</div>
+      <div class="tab" data-tab="sql">SQL 工具</div>
+    </div>
+
+    <div class="tab-content active" id="dash">
+      <div class="row">
+        <div class="card"><div class="muted">今日销售额</div><div class="metric" id="m_sales">-</div></div>
+        <div class="card"><div class="muted">今日订单数</div><div class="metric" id="m_orders">-</div></div>
+        <div class="card"><div class="muted">今日客户数</div><div class="metric" id="m_users">-</div></div>
+        <div class="card"><div class="muted">客单价</div><div class="metric" id="m_aov">-</div></div>
+      </div>
+      <div class="charts">
+        <div class="chart-box">
+          <div class="muted">近 30 日销售趋势（点击某日查看明细+统计图）</div>
+          <div id="trend" class="chart"></div>
+        </div>
+        <div class="chart-box">
+          <div class="muted">品类销售占比</div>
+          <div id="pie" class="chart"></div>
+        </div>
+      </div>
+      <div id="trendDetailWrap" class="detail-row">
+        <div id="trendDetail" class="table-container detail-left"></div>
+        <div class="detail-right" id="trendDetailCharts">
+          <div class="chart-box">
+            <div class="muted">当日品类分布</div><div id="trendCat" class="chart" style="height:480px;"></div>
+          </div>
+          <div class="chart-box">
+            <div class="muted">当日小时分布</div><div id="trendHour" class="chart" style="height:320px;"></div>
+          </div>
+          <div class="chart-box">
+            <div class="muted">当日支付方式</div><div id="trendPay" class="chart" style="height:320px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="data">
+      <div class="card">
+        <div class="muted">数据库结构 & 行数</div>
+        <button class="btn secondary" onclick="loadDatabaseInfo()">刷新</button>
+        <div id="databaseInfo" class="table-container" style="margin-top:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="muted">CSV 数据导入（清空表后导入，行数≤5000）</div>
+        <select id="importTable">
+          <option value="">请选择表</option>
+          <option value="users">users</option>
+          <option value="products">products</option>
+          <option value="orders">orders</option>
+          <option value="order_items">order_items</option>
+        </select>
+        <div class="row" style="gap:8px;margin:8px 0;">
+          <button class="btn secondary" onclick="showSampleCSV()">填充示例</button>
+          <button class="btn" onclick="importData()">导入数据</button>
+        </div>
+        <textarea id="csvData" rows="6"></textarea>
+        <div id="importResult" class="muted" style="margin-top:8px;"></div>
+      </div>
+      <div class="card">
+        <div class="muted">样本数据预览</div>
+        <div class="row" style="gap:8px;margin:8px 0;">
+          <button class="btn secondary" onclick="loadSampleData('users')">users</button>
+          <button class="btn secondary" onclick="loadSampleData('products')">products</button>
+          <button class="btn secondary" onclick="loadSampleData('orders')">orders</button>
+          <button class="btn secondary" onclick="loadSampleData('order_items')">order_items</button>
+        </div>
+        <div id="sampleData" class="table-container"></div>
+      </div>
+    </div>
+
+    <div class="tab-content" id="sql">
+      <div class="card">
+        <div class="muted">SQL 校验说明：仅允许 SELECT / WITH，自动 LIMIT 500，阻止写操作</div>
+      </div>
+      <div class="card">
+        <div class="muted">自定义 SQL（只读）</div>
+        <textarea id="sqlQuery" rows="6"></textarea>
+        <div class="row" style="gap:8px;margin:8px 0;">
+          <button class="btn" onclick="executeCustomQuery()">执行查询</button>
+          <button class="btn secondary" onclick="clearQuery()">清空</button>
+        </div>
+        <div id="queryMessage" class="muted"></div>
+        <div id="resultTableContainer" class="table-container" style="display:none;">
+          <table id="resultTable"></table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const themes = {
+      default:{
+        '--bg':'#050816','--bg2':'#0d1024','--card':'rgba(255,255,255,0.05)','--card-strong':'rgba(255,255,255,0.08)',
+        '--text':'#f1f5f9','--muted':'#94a3b8','--accent':'#22d3ee','--accent2':'#f59e0b',
+        '--success':'#22c55e','--danger':'#ef4444','--border':'rgba(255,255,255,0.12)'
+      },
+      pink:{
+        '--bg':'#fff0f7','--bg2':'#ffe2f1','--card':'rgba(255,255,255,0.8)','--card-strong':'#fff3fa',
+        '--text':'#3f0d25','--muted':'#8c2f52','--accent':'#ff3b8d','--accent2':'#ff9fcd',
+        '--success':'#16a34a','--danger':'#c1121f','--border':'rgba(255,53,149,0.18)'
+      },
+      dark:{
+        '--bg':'#060606','--bg2':'#0e0e11','--card':'rgba(255,255,255,0.04)','--card-strong':'rgba(255,255,255,0.06)',
+        '--text':'#f8fafc','--muted':'#cbd5e1','--accent':'#22c55e','--accent2':'#a855f7',
+        '--success':'#22c55e','--danger':'#ef4444','--border':'rgba(255,255,255,0.12)'
+      }
+    };
+    function applyTheme(name, el){
+      const theme = themes[name] || themes.default;
+      const root = document.documentElement;
+      Object.entries(theme).forEach(([k,v])=>root.style.setProperty(k,v));
+      document.querySelectorAll('.theme-btn').forEach(btn=>btn.classList.remove('active'));
+      if(el) el.classList.add('active');
+      trendChart.resize(); pieChart.resize();
+    }
+
+    const trendChart = echarts.init(document.getElementById('trend'));
+    const pieChart = echarts.init(document.getElementById('pie'));
+
+    document.querySelectorAll('.tab').forEach(tab=>{
+      tab.addEventListener('click',()=>{
+        document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+        setTimeout(()=>{trendChart.resize(); pieChart.resize();},50);
+      });
+    });
+
+    const fmt=n=>Number(n||0).toLocaleString();
+
+    async function loadOverview(){
+      const res=await fetch('/api/dashboard/overview'); const data=await res.json(); const t=data.today_metrics||{};
+      document.getElementById('m_sales').textContent='¥'+fmt(t.today_sales||0);
+      document.getElementById('m_orders').textContent=fmt(t.today_orders||0);
+      document.getElementById('m_users').textContent=fmt(t.today_customers||0);
+      document.getElementById('m_aov').textContent='¥'+Number(t.today_avg_order_value||0).toFixed(2);
+    }
+
+    function resizeDetailCharts(){
+      ['trendCat','trendHour','trendPay'].forEach(id=>{
+        const inst=echarts.getInstanceByDom(document.getElementById(id));
+        if(inst) inst.resize();
+      });
+    }
+
+    async function loadTrend(){
+      const res=await fetch('/api/sales/trend'); const data=await res.json();
+      if(!Array.isArray(data)){ trendChart.clear(); return; }
+      trendChart.off('click');
+      trendChart.on('click', async params=>{
+        const day=params.name;
+        const wrap=document.getElementById('trendDetailWrap');
+        const detailDiv=document.getElementById('trendDetail');
+        const detailCharts=document.getElementById('trendDetailCharts');
+        wrap.style.display='flex';
+        detailDiv.style.display='block'; detailDiv.innerHTML='<div class="muted">加载中...</div>'; detailCharts.style.display='none';
+        try{
+          const res=await fetch(`/api/orders/day/${day}`); const rows=await res.json();
+          if(rows.error||!Array.isArray(rows)||rows.length===0){ detailDiv.innerHTML='<div class="muted">无明细</div>'; return; }
+          renderTable(detailDiv, rows, true);
+          const statsRes=await fetch(`/api/orders-stats/day/${day}`); const stats=await statsRes.json();
+          renderDayCharts(day, stats||{});
+          detailCharts.style.display='grid';
+          detailDiv.scrollIntoView({behavior:'smooth'});
+        }catch(err){ detailDiv.innerHTML=`<div class="status-pill danger">加载失败：${err.message}</div>`; }
+      });
+      trendChart.setOption({
+        tooltip:{trigger:'axis'},
+        legend:{data:['销售额','订单数']},
+        xAxis:{type:'category',data:data.map(d=>d.date)},
+        yAxis:[{type:'value',name:'销售额'},{type:'value',name:'订单数'}],
+        series:[
+          {name:'销售额',type:'line',smooth:true,areaStyle:{opacity:0.1},data:data.map(d=>d.daily_sales)},
+          {name:'订单数',type:'line',smooth:true,yAxisIndex:1,data:data.map(d=>d.order_count)}
+        ]
+      });
+    }
+
+    async function loadPie(){
+      const res=await fetch('/api/analysis/category'); const data=await res.json();
+      if(!Array.isArray(data)){ pieChart.clear(); return; }
+      pieChart.setOption({
+        tooltip:{trigger:'item'},
+        legend:{bottom:0},
+        series:[{type:'pie',radius:['45%','70%'],data:data.map(d=>({name:d.category,value:d.total_revenue||0})),label:{formatter:'{b}: {d}%'}}]
+      });
+    }
+
+    async function loadDatabaseInfo(){
+      const container=document.getElementById('databaseInfo');
+      container.innerHTML='<div class="muted">加载中...</div>';
+      try{
+        const res=await fetch('/api/database/info'); const data=await res.json();
+        if(!data||data.error) throw new Error(data.error||'无数据');
+        let html='<table><tr><th>表</th><th>行数</th><th>列</th></tr>';
+        Object.entries(data).forEach(([name,info])=>{
+          const cols=Array.isArray(info.columns)?info.columns:[]; html+=`<tr><td>${name}</td><td>${info.row_count}</td><td>${cols.map(c=>c.name).join(', ')}</td></tr>`;
+        });
+        html+='</table>'; container.innerHTML=html;
+      }catch(err){ container.innerHTML=`<div class="status-pill danger">加载失败：${err.message}</div>`; }
+    }
+
+    function countCsvLines(txt){ return txt.trim()?txt.trim().split(/\\r?\\n/).length:0; }
+
+    async function importData(){
+      const table=document.getElementById('importTable').value;
+      const csv=document.getElementById('csvData').value.trim();
+      const out=document.getElementById('importResult');
+      if(!table){ out.textContent='请选择表'; return; }
+      if(!csv){ out.textContent='请输入 CSV'; return; }
+      if(countCsvLines(csv)-1>5000){ out.textContent='超过 5000 行'; return; }
+      const res=await fetch('/api/data/import',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({table_name:table,csv_content:csv})});
+      const data=await res.json();
+      out.textContent=data.success?data.message:('导入失败: '+(data.error||'')); 
+    }
+
+    function showSampleCSV(){
+      const table=document.getElementById('importTable').value;
+      const samples={
+        users:'user_id,username,email,registration_date,last_login,status\\n1,user1,user1@example.com,2024-01-01 10:01:00,2024-02-01 09:00:00,active',
+        products:'product_id,product_name,category,price,cost,stock_quantity,status,created_at\\n1,iPhone 15,电子产品,5999,4200,50,active,2024-01-10 08:00:00',
+        orders:'order_id,user_id,order_date,total_amount,status,payment_method\\n1,1,2024-01-12 12:00:00,5999,delivered,支付宝',
+        order_items:'item_id,order_id,product_id,quantity,unit_price\\n1,1,1,1,5999'
+      };
+      document.getElementById('csvData').value=samples[table]||'';
+    }
+
+    async function loadSampleData(table){
+      const container=document.getElementById('sampleData');
+      container.innerHTML='<div class="muted">加载中...</div>';
+      try{
+        const res=await fetch(`/api/data/sample/${table}`); const data=await res.json();
+        if(data.error||!Array.isArray(data)){ container.innerHTML=`<div class="status-pill danger">错误: ${data.error||'无数据'}</div>`; return; }
+        renderTable(container, data);
+      }catch(err){ container.innerHTML=`<div class="status-pill danger">请求失败：${err.message}</div>`; }
+    }
+
+    function setQueryExample(sql){ document.getElementById('sqlQuery').value=sql; }
+    function clearQuery(){ document.getElementById('sqlQuery').value=''; document.getElementById('resultTableContainer').style.display='none'; document.getElementById('queryMessage').innerHTML=''; }
+
+    async function executeCustomQuery(){
+      const q=document.getElementById('sqlQuery').value.trim().replace(/;+\s*$/,'');
+      if(!q){ alert('请输入 SQL'); return; }
+      if(!/^(select|with)/i.test(q)){ alert('仅允许 SELECT/WITH'); return; }
+      const res=await fetch(`/api/query/${encodeURIComponent(q)}`); const data=await res.json(); const msg=document.getElementById('queryMessage');
+      if(data.error){ msg.innerHTML=`<div class="status-pill danger">错误: ${data.error}</div>`; document.getElementById('resultTableContainer').style.display='none'; return; }
+      renderTable(document.getElementById('resultTableContainer'), data, true);
+      msg.innerHTML='<div class="status-pill">查询成功</div>';
+    }
+
+    function renderTable(containerOrId,data,show=false){
+      const container=typeof containerOrId==='string'?document.getElementById(containerOrId):containerOrId;
+      if(!data||data.length===0){ container.innerHTML='<div class="muted">暂无数据</div>'; return; }
+      const keys=Object.keys(data[0]);
+      let html='<table><tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr>';
+      data.forEach(r=>{ html+='<tr>'+keys.map(k=>`<td>${r[k]??''}</td>`).join('')+'</tr>'; });
+      html+='</table>'; container.innerHTML=html; if(show) container.style.display='block';
+    }
+
+    function renderDayCharts(day,stats){
+      const labelColor = (getComputedStyle(document.documentElement).getPropertyValue('--text') || '#e5e7eb').trim();
+      const cat=echarts.init(document.getElementById('trendCat'));
+      const hour=echarts.init(document.getElementById('trendHour'));
+      const pay=echarts.init(document.getElementById('trendPay'));
+      document.getElementById('trendDetailCharts').style.display='grid';
+      const catData=stats.category||[];
+      cat.setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['45%','70%'],data:catData.map(c=>({name:c.category,value:c.revenue||0})),label:{formatter:'{b}: {d}%'}}],title:{text:day+' 品类',left:'center',textStyle:{color:'#ccc',fontSize:12}}});
+      const hourData=stats.hour||[];
+      hour.setOption({
+        tooltip:{trigger:'axis'},
+        legend:{data:['订单','销售额'], top: 4, left: 'center', textStyle:{color:labelColor}, padding: [4,0,4,0]},
+        xAxis:{type:'category',data:hourData.map(h=>h.hour), axisLabel:{color:labelColor}},
+        yAxis:[
+          {type:'value',name:'订单数', axisLabel:{color:labelColor}},
+          {type:'value',name:'销售额', axisLabel:{color:labelColor}}
+        ],
+        grid:{top:50,bottom:40,left:50,right:50},
+        series:[
+          {name:'订单',type:'bar',data:hourData.map(h=>h.orders)},
+          {name:'销售额',type:'line',yAxisIndex:1,data:hourData.map(h=>h.sales)}
+        ],
+        title:{text:day+' 小时分布',left:'center',textStyle:{color:labelColor, fontSize:12}}
+      });
+      const payData=stats.payment||[];
+      pay.setOption({tooltip:{trigger:'item'},series:[{type:'pie',radius:['45%','70%'],data:payData.map(p=>({name:p.payment_method,value:p.orders})),label:{formatter:'{b}: {d}%'}}],title:{text:day+' 支付方式',left:'center',textStyle:{color:'#ccc',fontSize:12}}});
+    }
+
+    window.addEventListener('resize',()=>{trendChart.resize();pieChart.resize();resizeDetailCharts();});
+    window.addEventListener('load',()=>{applyTheme('default',document.querySelector('.theme-btn[data-theme="default"]'));loadOverview();loadTrend();loadPie();});
+  </script>
+</body>
+</html>

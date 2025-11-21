@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>电商数据看板 · 夜光版</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <style>
+    :root {
+      --bg: #070a1a;
+      --bg2: #0e1329;
+      --card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.1);
+      --text: #eef2ff;
+      --muted: #9ca3af;
+      --accent: #22d3ee;
+      --accent2: #f59e0b;
+      --glow: rgba(34,211,238,0.35);
+      --shadow: 0 18px 60px rgba(0,0,0,0.35);
+    }
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family:'Manrope','Microsoft Yahei','PingFang SC',sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 20%, rgba(99,102,241,0.14), transparent 30%),
+        radial-gradient(circle at 80% 0%, rgba(34,211,238,0.14), transparent 28%),
+        linear-gradient(135deg,var(--bg),var(--bg2));
+      position:relative;
+      overflow-x:hidden;
+    }
+    .texture{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background-image:
+        radial-gradient(rgba(255,255,255,0.04) 1px, transparent 0),
+        radial-gradient(rgba(255,255,255,0.025) 1px, transparent 0);
+      background-size:24px 24px, 38px 38px;
+      opacity:0.6;
+      mix-blend-mode:screen;
+    }
+    .wrap{max-width:1240px;margin:0 auto;padding:28px 18px 48px;position:relative;z-index:1;}
+    .hero{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 18px 16px;
+      background:linear-gradient(135deg,rgba(34,211,238,0.18),rgba(245,158,11,0.14));
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::after{
+      content:'';
+      position:absolute;
+      width:260px;height:260px;
+      right:-60px;bottom:-120px;
+      background:radial-gradient(circle, var(--glow), transparent 60%);
+      filter:blur(25px);
+      opacity:0.6;
+    }
+    .hero h1{margin:0;font-size:28px;letter-spacing:0.6px;}
+    .badge-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.08);
+      border:1px solid rgba(255,255,255,0.08);
+      color:var(--text);
+      font-weight:600;
+      font-size:13px;
+    }
+    .pill.accent{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0b0f1a;border:none;box-shadow:0 10px 30px rgba(34,211,238,0.35);}
+    .pill.ghost{background:transparent;border:1px solid rgba(255,255,255,0.18);}
+    .pill button{background:none;border:none;color:inherit;font:inherit;cursor:pointer;}
+    .muted{color:var(--muted);}
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:16px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+      backdrop-filter:blur(6px);
+    }
+    .card::before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(135deg,rgba(255,255,255,0.06),transparent 55%);
+      opacity:0.7;
+      pointer-events:none;
+    }
+    .metric-label{font-size:13px;letter-spacing:0.2px;}
+    .metric-value{font-size:32px;font-weight:800;margin:6px 0 4px;}
+    .metric-sub{font-size:12px;color:var(--muted);}
+    .charts{
+      display:grid;
+      grid-template-columns:2fr 1fr;
+      gap:12px;
+      margin-top:14px;
+    }
+    @media(max-width:980px){.charts{grid-template-columns:1fr;}}
+    .chart-box{height:400px;}
+    #pie{height:400px;}
+    .card-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:700;}
+    .sparkle{width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--glow);}
+    .footer-note{margin-top:16px;color:var(--muted);font-size:13px;display:flex;gap:10px;align-items:center;}
+    @keyframes fadeUp{from{transform:translateY(8px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+    .card,.hero{animation:fadeUp 0.35s ease;}
+  </style>
+</head>
+<body>
+  <div class="texture" aria-hidden="true"></div>
+  <div class="wrap">
+    <header class="hero">
+      <div>
+        <h1>电商数据看板 · 夜光版</h1>
+        <div class="muted">实时洞察今日核心指标，趋势与品类一目了然。</div>
+        <div class="badge-row">
+          <div class="pill ghost">SQL 直连 · 只读接口</div>
+          <div class="pill ghost">ECharts 动态可视化</div>
+          <div class="pill accent">本地 SQLite 数据</div>
+        </div>
+      </div>
+      <div class="badge-row" style="align-self:flex-end;">
+        <div class="pill">
+          <span id="timestamp" class="muted" style="font-weight:600;">--</span>
+        </div>
+        <div class="pill accent">
+          <button onclick="refreshAll()">刷新数据</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="grid" id="metricsRow">
+      <div class="card">
+        <div class="metric-label">今日销售额</div>
+        <div class="metric-value" id="m_sales">-</div>
+        <div class="metric-sub">含已完成订单</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">今日订单数</div>
+        <div class="metric-value" id="m_orders">-</div>
+        <div class="metric-sub">下单总量</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">今日客户数</div>
+        <div class="metric-value" id="m_users">-</div>
+        <div class="metric-sub">独立用户</div>
+      </div>
+      <div class="card">
+        <div class="metric-label">客单价</div>
+        <div class="metric-value" id="m_aov">-</div>
+        <div class="metric-sub">销售额 ÷ 订单数</div>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="card">
+        <div class="card-title"><span>近 30 日销售趋势</span><span class="sparkle"></span></div>
+        <div id="trend" class="chart-box"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span>品类销售占比</span><span class="sparkle"></span></div>
+        <div id="pie"></div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      <span class="sparkle"></span>
+      <span>输入接口：/api/dashboard/overview · /api/sales/trend · /api/analysis/category</span>
+    </div>
+  </div>
+
+  <script>
+    const fmt = n => Number(n || 0).toLocaleString();
+    const trendChart = echarts.init(document.getElementById('trend'));
+    const pieChart = echarts.init(document.getElementById('pie'));
+    const palette = ['#22d3ee','#fbbf24','#22c55e','#a855f7','#f472b6','#38bdf8'];
+
+    async function loadOverview(){
+      try{
+        const res = await fetch('/api/dashboard/overview');
+        const data = await res.json();
+        const t = data.today_metrics || {};
+        document.getElementById('m_sales').textContent = '¥' + fmt(t.today_sales || 0);
+        document.getElementById('m_orders').textContent = fmt(t.today_orders || 0);
+        document.getElementById('m_users').textContent = fmt(t.today_customers || 0);
+        document.getElementById('m_aov').textContent = '¥' + Number(t.today_avg_order_value || 0).toFixed(2);
+        document.getElementById('timestamp').textContent = '更新于 ' + new Date().toLocaleString();
+      }catch(err){
+        document.getElementById('timestamp').textContent = '加载失败';
+      }
+    }
+
+    async function loadTrend(){
+      try{
+        const res = await fetch('/api/sales/trend');
+        const data = await res.json();
+        if(!Array.isArray(data)){ trendChart.clear(); return; }
+        trendChart.setOption({
+          color: palette,
+          backgroundColor:'transparent',
+          tooltip:{trigger:'axis',backgroundColor:'rgba(15,23,42,0.9)',borderWidth:0,textStyle:{color:'#e5e7eb'}},
+          legend:{data:['销售额','订单数'],textStyle:{color:'#cbd5e1'}},
+          xAxis:{type:'category',data:data.map(d=>d.date),axisLine:{lineStyle:{color:'rgba(255,255,255,0.08)'}},axisLabel:{color:'#cbd5e1'}},
+          yAxis:[
+            {type:'value',name:'销售额',axisLabel:{color:'#cbd5e1'},splitLine:{lineStyle:{color:'rgba(255,255,255,0.05)'}}},
+            {type:'value',name:'订单数',axisLabel:{color:'#cbd5e1'},splitLine:{show:false}}
+          ],
+          grid:{left:50,right:50,bottom:40,top:40},
+          series:[
+            {name:'销售额',type:'line',smooth:true,areaStyle:{opacity:0.12},data:data.map(d=>d.daily_sales)},
+            {name:'订单数',type:'line',smooth:true,yAxisIndex:1,symbol:'circle',symbolSize:7,data:data.map(d=>d.order_count)}
+          ]
+        });
+      }catch(err){
+        trendChart.clear();
+      }
+    }
+
+    async function loadPie(){
+      try{
+        const res = await fetch('/api/analysis/category');
+        const data = await res.json();
+        if(!Array.isArray(data)){ pieChart.clear(); return; }
+        pieChart.setOption({
+          color: palette,
+          tooltip:{trigger:'item',backgroundColor:'rgba(15,23,42,0.9)',borderWidth:0,textStyle:{color:'#e5e7eb'}},
+          legend:{bottom:0,textStyle:{color:'#cbd5e1'}},
+          series:[{
+            type:'pie',
+            radius:['42%','70%'],
+            itemStyle:{borderColor:'rgba(14,19,41,0.9)',borderWidth:2},
+            data:data.map(d=>({name:d.category,value:d.total_revenue || 0})),
+            label:{formatter:'{b}\\n{d}%'}
+          }]
+        });
+      }catch(err){
+        pieChart.clear();
+      }
+    }
+
+    function refreshAll(){
+      loadOverview();
+      loadTrend();
+      loadPie();
+    }
+
+    window.addEventListener('resize',()=>{trendChart.resize();pieChart.resize();});
+    window.addEventListener('load',refreshAll);
+  </script>
+</body>
+</html>
