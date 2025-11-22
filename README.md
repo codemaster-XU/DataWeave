@@ -1,7 +1,7 @@
 # 电商数据库分析中台
 
 > 数据指标看板 + 订单明细 + 只读 SQL 工具 + CSV 追加导入  
-> Author: ZongQi Xu · Email: zongqixu2025@163.com
+> Author: Zongqi Xu · Email: zongqixu2025@163.com
 
 ## 快速运行
 ```bash
